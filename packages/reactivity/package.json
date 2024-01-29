@@ -1,0 +1,18 @@
+{
+  "name": "@echo/reactivity",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "comment": "name指定构建的输出名称，formats构建输出的模块格式，cjs 用于支持 Node.js 等 CommonJS 规范的环境",
+  "comment": "esm-bundler表示 ES module 的 bundler 版本，用于支持现代的模块化构建工具，比如 Rollup 和 Webpack",
+  "comment": "global 表示一个全局变量的构建，即通过 <script> 标签引入的方式，可以在浏览器中直接使用",
+  "buildOptions": {
+    "name": "EchoReactivity",
+    "formats": [
+      "esm-bundler",
+      "cjs",
+      "global"
+    ]
+  }
+}

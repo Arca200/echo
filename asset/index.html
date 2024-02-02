@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>echo</title>
+    <link rel="icon" type="image/png" href="logo.webp">
+</head>
+<body>
+<script src="../node_modules/@echo/reactivity/dist/reactivity.global.js"></script>
+<script>
+  let {
+    reactive,
+    effect
+  } = EchoReactivity
+  const Sykes = reactive({
+    name: 'Sykes',
+    age: 1
+  })
+  const Arca = reactive(['Arca', 'Sykes'])
+  // 创造依赖函数的包装并执行一次，存入Stack并设置为当前依赖,执行完毕后销毁当前依赖并取栈中的下一个依赖作为当前依赖
+  effect(() => {
+    console.log(Arca[1])
+  })
+  // effect(() => {
+  //   console.log(Sykes.age)
+  // })
+  // 在这里无法产生依赖
+  // console.log(Arca.name)
+  setInterval(() => {
+    Arca[1] += '1'
+    // Sykes.age++
+  }, 3000)
+</script>
+</body>
+</html>

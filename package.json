@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "mvvm-based front-end framework",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "b": "node scripts/build.js"
+    "build": "node scripts/build.js"
   },
   "comment": "workspaces定义此项目是一个多包存储库（monorepo），意味着项目包含多个相关的子包（packages）。每个子包都可以是独立的 npm 包，但它们在同一个版本库中进行管理",
   "workspaces": [

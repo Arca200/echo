@@ -1,5 +1,5 @@
 {
-  "name": "shared",
+  "name": "@echo/shared",
   "version": "1.0.0",
   "main": "index.js",
   "author": "",

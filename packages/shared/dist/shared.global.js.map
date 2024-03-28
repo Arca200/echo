@@ -1,0 +1,1 @@
+{"version":3,"file":"shared.global.js","sources":["../src/index.js"],"sourcesContent":["function isObject(param) {\n    return Object.prototype.toString.call(param) === '[object Object]'\n}\n\nexport {\n    isObject\n}"],"names":[],"mappings":";;;IAAA,SAAS,QAAQ,CAAC,KAAK,EAAE;IACzB,IAAI,OAAO,MAAM,CAAC,SAAS,CAAC,QAAQ,CAAC,IAAI,CAAC,KAAK,CAAC,KAAK,iBAAiB;IACtE;;;;;;;;;;"}

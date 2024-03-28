@@ -1,0 +1,11 @@
+{
+  "name": "@echo/shared",
+  "main": "index.js",
+  "buildOptions": {
+    "name": "EchoShared",
+    "formats": [
+      "esm-bundler",
+      "global"
+    ]
+  }
+}

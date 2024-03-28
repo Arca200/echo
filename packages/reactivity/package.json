@@ -1,0 +1,12 @@
+{
+  "name": "@echo/reactivity",
+  "version": "1.0.0",
+  "main": "index.js",
+  "buildOptions": {
+    "name": "EchoReactivity",
+    "formats": [
+      "esm-bundler",
+      "global"
+    ]
+  }
+}

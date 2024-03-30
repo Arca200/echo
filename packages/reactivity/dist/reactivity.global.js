@@ -65,8 +65,8 @@ var EchoReactivity = (function (exports) {
     });
   }
 
-  function isObject(param) {
-      return Object.prototype.toString.call(param) === '[object Object]'
+  function isObject (param) {
+    return Object.prototype.toString.call(param) === '[object Object]'
   }
 
   function getCreator (isShallow = false, isReadOnly = false) {

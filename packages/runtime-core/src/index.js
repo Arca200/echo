@@ -1,1 +1,2 @@
-const a = 1
+export { createApp } from './app'
+export { h } from './h'

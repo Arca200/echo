@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<style>
+    .color-red {
+        color: #ff8e8e
+    }
+
+    .color-blue {
+        color: #1b007a
+    }
+</style>
+<body>
+<div id="container"></div>
+<script src="../dist/runtime-core.global.js"></script>
+<script>
+  const { createApp, h } = EchoRuntime
+  createApp({
+    render () {
+      return h('div',
+        {},
+        [h(
+          {
+            render () {
+              return h('h1', { class: 'color-blue' }, this.content + ' : ' + this.title)
+            },
+            setup (props) {
+              return {
+                content: 'this is innerSetup'
+              }
+            }
+          },
+          { title: 'today news' },
+          ''
+        )])
+    },
+    setup () {
+      return {
+        msg: 'world'
+      }
+    }
+  }).mount('#container')
+  // createApp({
+  //   render () {
+  //     return h('div',
+  //       {
+  //         id: 'outer',
+  //         onClick: () => {
+  //           console.log('click')
+  //         },
+  //         onmousedown: () => {
+  //           console.log('??')
+  //         }
+  //       },
+  //       [h({
+  //         render () {
+  //           return h('h1', { class: 'color-blue' }, this.title)
+  //         }
+  //       }, { title: 'today news' }, ''), h('span', { class: 'color-red' }, 'hello ' + this.msg)])
+  //   },
+  //   setup () {
+  //     return {
+  //       msg: 'world'
+  //     }
+  //   }
+  // }).mount('#container')
+</script>
+</body>
+</html>

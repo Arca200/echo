@@ -1,0 +1,12 @@
+{
+  "name": "@echo/runtime",
+  "version": "1.0.0",
+  "main": "index.js",
+  "buildOptions": {
+    "name": "EchoRuntime",
+    "formats": [
+      "esm-bundler",
+      "global"
+    ]
+  }
+}

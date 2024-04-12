@@ -89,162 +89,145 @@ function mountElement (vnode, container) {
   }
 }
 
-// 用于存储所有的 effect 对象
-function createDep (effects) {
-  const dep = new Set(effects);
-  return dep
+let reactiveEffectStack = [];
+let currentReactiveEffect = undefined;
+
+function createReactiveEffect (fn, scheduler) {
+  const reactiveEffect = function () {
+    if (!reactiveEffectStack.includes(reactiveEffect)) {
+      try {
+        reactiveEffectStack.push(reactiveEffect);
+        currentReactiveEffect = reactiveEffect;
+        fn();
+      } finally {
+        reactiveEffectStack.pop();
+        currentReactiveEffect = reactiveEffectStack[reactiveEffectStack.length - 1];
+      }
+    }
+  };
+  reactiveEffect.scheduler = scheduler;
+  return reactiveEffect
+}
+
+function effect (fn, option = { lazy: false, scheduler: undefined }) {
+  const reactiveEffect = createReactiveEffect(fn, option.scheduler);
+  if (option.lazy !== true) {
+    reactiveEffect();
+  }
 }
 
 const targetMap = new WeakMap();
 
-function trigger (target, type, key) {
-  let deps = [];
-  const depsMap = targetMap.get(target);
-  if (!depsMap) return
-  const dep = depsMap.get(key);
-  deps.push(dep);
-  const effects = [];
-  deps.forEach(dep => {
-    effects.push(...dep);
-  });
-  triggerEffects(createDep(effects));
+function Track (target, key) {
+  if (!currentReactiveEffect) {
+    return
+  }
+  let depMap = targetMap.get(target);
+  if (!depMap) {
+    targetMap.set(target, (depMap = new Map));
+  }
+  let dep = depMap.get(key);
+  if (!dep) {
+    depMap.set(key, (dep = new Set));
+  }
+  if (!dep.has(currentReactiveEffect)) {
+    dep.add(currentReactiveEffect);
+  }
 }
 
-function triggerEffects (dep) {
-  for (const effect of dep) {
+function Trigger (target, key) {
+  let depMap = targetMap.get(target);
+  if (!depMap) {
+    return
+  }
+  const effectSet = new Set();
+  depMap.get(key).forEach(effect => {
+    effectSet.add(effect);
+  });
+  effectSet.forEach(effect => {
     if (effect.scheduler) {
       effect.scheduler();
     } else {
-      effect.run();
+      effect();
+    }
+  });
+}
+
+function getCreator (isShallow = false, isReadOnly = false) {
+  return (target, key) => {
+    if (key === 'is_reactive') {
+      return !isReadOnly
+    }
+    if (key === 'is_readonly') {
+      return isReadOnly
+    }
+    let res = Reflect.get(target, key);
+    if (!isReadOnly) {
+      //TODO 收集
+      Track(target, key);
+    }
+    if (!isShallow && isObject(res)) {
+      //TODO 将res转变成响应式对象
+      return isReadOnly ? readonly(res) : reactive(res)
+    } else {
+      return res
     }
   }
 }
 
-const get = createGetter();
-const set = createSetter();
-const readonlyGet = createGetter(true);
-const shallowReadonlyGet = createGetter(true, true);
-
-function createGetter(isReadonly = false, shallow = false) {
-    return function get(target, key, receiver) {
-        const isExistInReactiveMap = () =>
-            key === ReactiveFlags.RAW && receiver === reactiveMap.get(target);
-
-        const isExistInReadonlyMap = () =>
-            key === ReactiveFlags.RAW && receiver === readonlyMap.get(target);
-
-        const isExistInShallowReadonlyMap = () =>
-            key === ReactiveFlags.RAW && receiver === shallowReadonlyMap.get(target);
-
-        if (key === ReactiveFlags.IS_REACTIVE) {
-            return !isReadonly;
-        } else if (key === ReactiveFlags.IS_READONLY) {
-            return isReadonly;
-        } else if (
-            isExistInReactiveMap() ||
-            isExistInReadonlyMap() ||
-            isExistInShallowReadonlyMap()
-        ) {
-            return target;
-        }
-
-        const res = Reflect.get(target, key, receiver);
-
-        if (shallow) {
-            return res;
-        }
-
-        if (isObject(res)) {
-            // 把内部所有的是 object 的值都用 reactive 包裹，变成响应式对象
-            // 如果说这个 res 值是一个对象的话，那么我们需要把获取到的 res 也转换成 reactive
-            // res 等于 target[key]
-            return isReadonly ? readonly(res) : reactive(res);
-        }
-
-        return res;
-    };
+function setCreator (isReadOnly = false) {
+  return (target, key, val) => {
+    if (isReadOnly) {
+      throw new Error('这是一个只读的对象')
+    }
+    Reflect.set(target, key, val);
+    //TODO 触发依赖
+    Trigger(target, key);
+  }
 }
 
-function createSetter() {
-    return function set(target, key, value, receiver) {
-        const result = Reflect.set(target, key, value, receiver);
-
-        // 在触发 set 的时候进行触发依赖
-        trigger(target, "set", key);
-
-        return result;
-    };
-}
-
-const readonlyHandlers = {
-    get: readonlyGet,
-    set(target, key) {
-        // readonly 的响应式对象不可以修改值
-        console.warn(
-            `Set operation on key "${String(key)}" failed: target is readonly.`,
-            target
-        );
-        return true;
-    },
+const reactiveHandler = {
+  get: getCreator(),
+  set: setCreator()
 };
-const mutableHandlers = {
-    get,
-    set,
+const readOnlyHandler = {
+  get: getCreator(false, true),
+  set: setCreator(true)
 };
-const shallowReadonlyHandlers = {
-    get: shallowReadonlyGet,
-    set(target, key) {
-        // readonly 的响应式对象不可以修改值
-        console.warn(
-            `Set operation on key "${String(key)}" failed: target is readonly.`,
-            target
-        );
-        return true;
-    },
+const shallowReadOnlyHandler = {
+  get: getCreator(true, true),
+  set: setCreator(true)
 };
 
+// TODO 为什么要设计两个Map来存储呢?
 const reactiveMap = new WeakMap();
-const readonlyMap = new WeakMap();
-const shallowReadonlyMap = new WeakMap();
+const readOnlyMap = new WeakMap();
 
-const ReactiveFlags = {
-  IS_REACTIVE: '__v_isReactive',
-  IS_READONLY: '__v_isReadonly',
-  RAW: '__v_raw',
-};
+function createReactiveObject (target, isReadOnly, handler) {
+  if (isObject(target) !== true) {
+    throw new Error('只能将对象转化为响应式对象')
+  }
+  const proxyMap = isReadOnly ? readOnlyMap : reactiveMap;
+  let proxy = proxyMap.get(target);
+  if (proxy) {
+    return proxy
+  } else {
+    proxy = new Proxy(target, handler);
+    proxyMap.set(target, proxy);
+    return proxy
+  }
+}
 
 function reactive (target) {
-  return createReactiveObject(target, reactiveMap, mutableHandlers)
+  return createReactiveObject(target, false, reactiveHandler)
 }
 
 function readonly (target) {
-  return createReactiveObject(target, readonlyMap, readonlyHandlers)
+  return createReactiveObject(target, true, readOnlyHandler)
 }
 
 function shallowReadonly (target) {
-  return createReactiveObject(
-    target,
-    shallowReadonlyMap,
-    shallowReadonlyHandlers
-  )
-}
-
-function createReactiveObject (target, proxyMap, baseHandlers) {
-  // 核心就是 proxy
-  // 目的是可以侦听到用户 get 或者 set 的动作
-
-  // 如果命中的话就直接返回就好了
-  // 使用缓存做的优化点
-  const existingProxy = proxyMap.get(target);
-  if (existingProxy) {
-    return existingProxy
-  }
-
-  const proxy = new Proxy(target, baseHandlers);
-
-  // 把创建好的 proxy 给存起来，
-  proxyMap.set(target, proxy);
-  return proxy
+  return createReactiveObject(target, true, shallowReadOnlyHandler)
 }
 
 function initComponentProps (instance, props) {
@@ -346,29 +329,32 @@ function emit (instance, event) {
   emitAction && emitAction();
 }
 
-function createComponentInstance (vnode) {
+function createComponentInstance (vnode, parent) {
   const instance = {
-    vnode, type: vnode.type, setupState: {}, props: {}, emit: () => {}, slots: {}
+    vnode, type: vnode.type, setupState: {}, props: {}, emit: () => {}, slots: {}, provide: {}, parent
   };
   instance.emit = emit.bind(null, instance);
   return instance
 }
 
-function mountComponent (vnode, container) {
-  const componentInstance = createComponentInstance(vnode);
+function mountComponent (vnode, container, parent) {
+  const componentInstance = createComponentInstance(vnode, parent);
   setupComponent(componentInstance);
   setupRenderEffect(componentInstance, vnode, container);
 }
 
 //调用render函数，并且render函数的指向componentInstance.proxy
 function setupRenderEffect (componentInstance, vnode, container) {
-  const subTree = componentInstance.render.call(componentInstance.proxy);
-  patch(subTree, container);
+  effect(() => {
+    const { proxy } = componentInstance;
+    const subTree = componentInstance.render.call(proxy);
+    patch(subTree, container, componentInstance);
 
-  vnode.el = subTree.el;
+    vnode.el = subTree.el;
+  });
 }
 
-function patch (vnode, container) {
+function patch (vnode, container, parent) {
   const { type, shapeFlag } = vnode;
 
   switch (type) {
@@ -382,7 +368,7 @@ function patch (vnode, container) {
       if (shapeFlag & ShapeFlags.ELEMENT) {
         processElement(vnode, container);
       } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-        processComponent(vnode, container);
+        processComponent(vnode, container, parent);
       }
       break
   }
@@ -398,16 +384,19 @@ function processFragment (vnode, container) {
 function processTextNode (vnode, container) {
   const { children } = vnode;
   const textNode = (vnode.el = document.createTextNode(children));
-  container.append(textNode);
-
+  if (isString(container)) {
+    document.querySelector(container).appendChild(textNode);
+  } else {
+    container.appendChild(textNode);
+  }
 }
 
-function processElement (vnode, container) {
+function processElement (vnode, container, parent) {
   mountElement(vnode, container);
 }
 
-function processComponent (vnode, container) {
-  mountComponent(vnode, container);
+function processComponent (vnode, container, parent) {
+  mountComponent(vnode, container, parent);
 }
 
 function render (vnode, rootContainer) {
@@ -429,12 +418,33 @@ function h$1 (type, props, children) {
   return createVNode(type, props, children)
 }
 
-function inject(key) {
-    console.log(key);
+function inject (key) {
+  const instance = getCurrentInstance();
+  if (instance) {
+    if (instance.provide && instance.provide[key]) {
+      return instance.provide[key]
+    } else if (instance.parent) {
+      return injectFromParent(instance.parent, key)
+    }
+  }
+  return null
 }
 
-function provide(key, value) {
-    console.log(key, value);
+function injectFromParent (parent, key) {
+  if (parent.provide && parent.provide[key]) {
+    return parent.provide[key]
+  } else if (parent.parent) {
+    return injectFromParent(parent.parent, key)
+  }
+  return null
+}
+
+function provide (key, value) {
+  const instance = getCurrentInstance();
+  if (instance) {
+    const { provide } = instance;
+    provide[key] = value;
+  }
 }
 
 export { createApp, createTextVNode, getCurrentInstance, h$1 as h, inject, provide, renderSlots };

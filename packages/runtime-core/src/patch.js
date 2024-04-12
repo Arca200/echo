@@ -1,10 +1,10 @@
-import { ShapeFlags } from '@echo/shared/src'
+import { isString, ShapeFlags } from '@echo/shared/src'
 import { mountElement } from './mountElement'
 import { mountComponent } from './mountComponent'
 import { Fragment } from './vnode'
 import { Text } from './vnode'
 
-function patch (vnode, container) {
+function patch (vnode, container, parent) {
   const { type, shapeFlag } = vnode
 
   switch (type) {
@@ -18,7 +18,7 @@ function patch (vnode, container) {
       if (shapeFlag & ShapeFlags.ELEMENT) {
         processElement(vnode, container)
       } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-        processComponent(vnode, container)
+        processComponent(vnode, container, parent)
       }
       break
   }
@@ -34,16 +34,19 @@ function processFragment (vnode, container) {
 function processTextNode (vnode, container) {
   const { children } = vnode
   const textNode = (vnode.el = document.createTextNode(children))
-  container.append(textNode)
-
+  if (isString(container)) {
+    document.querySelector(container).appendChild(textNode)
+  } else {
+    container.appendChild(textNode)
+  }
 }
 
-function processElement (vnode, container) {
+function processElement (vnode, container, parent) {
   mountElement(vnode, container)
 }
 
-function processComponent (vnode, container) {
-  mountComponent(vnode, container)
+function processComponent (vnode, container, parent) {
+  mountComponent(vnode, container, parent)
 }
 
 export default patch

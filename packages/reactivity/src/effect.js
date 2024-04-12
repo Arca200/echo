@@ -1,115 +1,70 @@
-import { createDep } from './dep'
-import { extend } from '@echo/shared/src'
+let reactiveEffectStack = []
+let currentReactiveEffect = undefined
 
-let activeEffect = undefined
-let shouldTrack = false
+function createReactiveEffect (fn, scheduler) {
+  const reactiveEffect = function () {
+    if (!reactiveEffectStack.includes(reactiveEffect)) {
+      try {
+        reactiveEffectStack.push(reactiveEffect)
+        currentReactiveEffect = reactiveEffect
+        fn()
+      } finally {
+        reactiveEffectStack.pop()
+        currentReactiveEffect = reactiveEffectStack[reactiveEffectStack.length - 1]
+      }
+    }
+  }
+  reactiveEffect.scheduler = scheduler
+  return reactiveEffect
+}
+
+function effect (fn, option = { lazy: false, scheduler: undefined }) {
+  const reactiveEffect = createReactiveEffect(fn, option.scheduler)
+  if (option.lazy !== true) {
+    reactiveEffect()
+  }
+}
+
 const targetMap = new WeakMap()
 
-class ReactiveEffect {
-  constructor (fn, scheduler) {
-    console.log('创建 ReactiveEffect 对象')
-    this.active = true
-    this.deps = []
-    this.fn = fn
-    this.scheduler = scheduler
-  }
-
-  run () {
-    console.log('run')
-    if (!this.active) {
-      return this.fn()
-    }
-    shouldTrack = true
-    activeEffect = this
-    console.log('执行用户传入的 fn')
-    const result = this.fn()
-    shouldTrack = false
-    activeEffect = undefined
-    return result
-  }
-
-  stop () {
-    if (this.active) {
-      cleanupEffect(this)
-      if (this.onStop) {
-        this.onStop()
-      }
-      this.active = false
-    }
-  }
-}
-
-function cleanupEffect (effect) {
-  effect.deps.forEach(dep => {
-    dep.delete(effect)
-  })
-  effect.deps.length = 0
-}
-
-export function effect (fn, options = {}) {
-  const _effect = new ReactiveEffect(fn)
-  extend(_effect, options)
-  _effect.run()
-  const runner = _effect.run.bind(_effect)
-  runner.effect = _effect
-  return runner
-}
-
-export function stop (runner) {
-  runner.effect.stop()
-}
-
-export function track (target, type, key) {
-  if (!isTracking()) {
+function Track (target, key) {
+  if (!currentReactiveEffect) {
     return
   }
-  console.log(`触发 track -> target: ${target} type:${type} key:${key}`)
-  let depsMap = targetMap.get(target)
-  if (!depsMap) {
-    depsMap = new Map()
-    targetMap.set(target, depsMap)
+  let depMap = targetMap.get(target)
+  if (!depMap) {
+    targetMap.set(target, (depMap = new Map))
   }
-  let dep = depsMap.get(key)
+  let dep = depMap.get(key)
   if (!dep) {
-    dep = createDep()
-    depsMap.set(key, dep)
+    depMap.set(key, (dep = new Set))
   }
-  trackEffects(dep)
-}
-
-export function trackEffects (dep) {
-  if (!dep.has(activeEffect)) {
-    dep.add(activeEffect)
-    activeEffect.deps.push(dep)
+  if (!dep.has(currentReactiveEffect)) {
+    dep.add(currentReactiveEffect)
   }
 }
 
-export function trigger (target, type, key) {
-  let deps = []
-  const depsMap = targetMap.get(target)
-  if (!depsMap) return
-  const dep = depsMap.get(key)
-  deps.push(dep)
-  const effects = []
-  deps.forEach(dep => {
-    effects.push(...dep)
+function Trigger (target, key) {
+  let depMap = targetMap.get(target)
+  if (!depMap) {
+    return
+  }
+  const effectSet = new Set()
+  depMap.get(key).forEach(effect => {
+    effectSet.add(effect)
   })
-  triggerEffects(createDep(effects))
-}
-
-export function isTracking () {
-  return shouldTrack && activeEffect !== undefined
-}
-
-export function triggerEffects (dep) {
-  for (const effect of dep) {
+  effectSet.forEach(effect => {
     if (effect.scheduler) {
       effect.scheduler()
     } else {
-      effect.run()
+      effect()
     }
-  }
+  })
 }
+
 export {
-  ReactiveEffect
+  effect,
+  Trigger,
+  Track,
+  targetMap
 }

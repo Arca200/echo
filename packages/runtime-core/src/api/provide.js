@@ -1,7 +1,13 @@
-function provide(key, value) {
-    console.log(key, value)
+import { getCurrentInstance } from '../setupComponent'
+
+function provide (key, value) {
+  const instance = getCurrentInstance()
+  if (instance) {
+    const { provide } = instance
+    provide[key] = value
+  }
 }
 
 export {
-    provide
+  provide
 }

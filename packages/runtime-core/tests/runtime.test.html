@@ -21,9 +21,11 @@
 <body>
 <div id="container"></div>
 <script src="../dist/runtime-core.global.js"></script>
+<script src="../../reactivity/dist/reactivity.global.js"></script>
 <script>
 
-  const { createApp, h, provide, inject,createTextVNode } = EchoRuntime
+  const { createApp, h, provide, inject, createTextVNode, getCurrentInstance } = EchoRuntime
+  const { reactive } = EchoReactivity
   createApp({
     render () {
       return h(
@@ -31,20 +33,31 @@
           render () {
             return h(
               'div',
-              {},
-              [createTextVNode('Hello')]
+              {
+                class: 'color-blue',
+                onClick: this.onClick
+              },
+              this.pet.name + this.pet.age
             )
           },
           setup () {
-            return {}
+            const pet = reactive({
+              name: '修发',
+              age: 1
+            })
+            let onClick = () => {
+              pet.age++
+            }
+            return {
+              pet,
+              onClick
+            }
           }
         }
       )
     },
     setup () {
-      return {
-        msg: 'world'
-      }
+      return {}
     }
   }).mount('#container')
 </script>

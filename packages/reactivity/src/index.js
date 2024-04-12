@@ -1,14 +1,18 @@
 export {
+  Track,
+  Trigger,
+  effect,
+  targetMap
+} from './effect'
+export {
   reactive,
+  shallowReactive,
   readonly,
   shallowReadonly,
-  isReadonly,
   isReactive,
-  isProxy,
-} from "./reactive";
-
-export { ref, proxyRefs, unRef, isRef } from "./ref";
-
-export { effect, stop, ReactiveEffect } from "./effect";
-
-export { computed } from "./computed";
+  isReadOnly,
+  isProxy
+} from './reactive'
+export {
+  ref
+} from './ref'

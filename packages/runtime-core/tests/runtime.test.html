@@ -5,9 +5,6 @@
     <title>Title</title>
 </head>
 <style>
-    .color-red {
-        color: #ff8e8e
-    }
 
     .color-blue {
         color: #1b007a;
@@ -26,75 +23,21 @@
 <script src="../dist/runtime-core.global.js"></script>
 <script>
 
-  const { createApp, h, renderSlots, createTextVNode, getCurrentInstance } = EchoRuntime
-  // createApp({
-  //   render () {
-  //     return h('div',
-  //       {},
-  //       [h(
-  //         {
-  //           render () {
-  //             return h('h1', { class: 'color-blue' }, this.content + ' : ' + this.title)
-  //           },
-  //           setup (props) {
-  //             return {
-  //               content: 'this is innerSetup'
-  //             }
-  //           }
-  //         },
-  //         { title: 'today news' },
-  //         ''
-  //       )])
-  //   },
-  //   setup () {
-  //     return {
-  //       msg: 'world'
-  //     }
-  //   }
-  // }).mount('#container')
+  const { createApp, h, provide, inject,createTextVNode } = EchoRuntime
   createApp({
     render () {
       return h(
         {
           render () {
-            return h('div',
+            return h(
+              'div',
               {},
-              [
-                renderSlots(this.$slots, 'header', {
-                  name: '作用域插槽'
-                }),
-                createTextVNode('this is TextVnode'),
-                h('div',
-                  {
-                    id: 'outer',
-                    onClick: () => {
-                      this.showEmit()
-                    },
-                    class: 'color-blue'
-                  },
-                  this.elementType
-                ),
-                renderSlots(this.$slots, 'footer')
-              ]
+              [createTextVNode('Hello')]
             )
           },
-          setup (props, { emit }) {
-            return {
-              showEmit: () => {
-                emit('onAdd')
-              }
-            }
+          setup () {
+            return {}
           }
-        },
-        {
-          elementType: 'Button',
-          onAdd: () => {
-            console.log('this is emit onAdd')
-          }
-        },
-        {
-          header: (props) => h('div', {}, 'header' + props.name),
-          footer: h('div', {}, 'footer')
         }
       )
     },

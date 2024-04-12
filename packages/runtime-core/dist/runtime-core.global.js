@@ -432,10 +432,20 @@ var EchoRuntime = (function (exports) {
     return createVNode(type, props, children)
   }
 
+  function inject(key) {
+      console.log(key);
+  }
+
+  function provide(key, value) {
+      console.log(key, value);
+  }
+
   exports.createApp = createApp;
   exports.createTextVNode = createTextVNode;
   exports.getCurrentInstance = getCurrentInstance;
   exports.h = h$1;
+  exports.inject = inject;
+  exports.provide = provide;
   exports.renderSlots = renderSlots;
 
   return exports;

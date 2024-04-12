@@ -429,5 +429,13 @@ function h$1 (type, props, children) {
   return createVNode(type, props, children)
 }
 
-export { createApp, createTextVNode, getCurrentInstance, h$1 as h, renderSlots };
+function inject(key) {
+    console.log(key);
+}
+
+function provide(key, value) {
+    console.log(key, value);
+}
+
+export { createApp, createTextVNode, getCurrentInstance, h$1 as h, inject, provide, renderSlots };
 //# sourceMappingURL=runtime-core.esm-bundler.js.map

@@ -1,5 +1,3 @@
-import { shallowReadonly } from '@echo/reactivity/src';
-
 const ShapeFlags = {
   ELEMENT: 1,
   STATEFUL_COMPONENT: 1 << 1,
@@ -89,6 +87,164 @@ function mountElement (vnode, container) {
   } else {
     container.appendChild(el);
   }
+}
+
+// 用于存储所有的 effect 对象
+function createDep (effects) {
+  const dep = new Set(effects);
+  return dep
+}
+
+const targetMap = new WeakMap();
+
+function trigger (target, type, key) {
+  let deps = [];
+  const depsMap = targetMap.get(target);
+  if (!depsMap) return
+  const dep = depsMap.get(key);
+  deps.push(dep);
+  const effects = [];
+  deps.forEach(dep => {
+    effects.push(...dep);
+  });
+  triggerEffects(createDep(effects));
+}
+
+function triggerEffects (dep) {
+  for (const effect of dep) {
+    if (effect.scheduler) {
+      effect.scheduler();
+    } else {
+      effect.run();
+    }
+  }
+}
+
+const get = createGetter();
+const set = createSetter();
+const readonlyGet = createGetter(true);
+const shallowReadonlyGet = createGetter(true, true);
+
+function createGetter(isReadonly = false, shallow = false) {
+    return function get(target, key, receiver) {
+        const isExistInReactiveMap = () =>
+            key === ReactiveFlags.RAW && receiver === reactiveMap.get(target);
+
+        const isExistInReadonlyMap = () =>
+            key === ReactiveFlags.RAW && receiver === readonlyMap.get(target);
+
+        const isExistInShallowReadonlyMap = () =>
+            key === ReactiveFlags.RAW && receiver === shallowReadonlyMap.get(target);
+
+        if (key === ReactiveFlags.IS_REACTIVE) {
+            return !isReadonly;
+        } else if (key === ReactiveFlags.IS_READONLY) {
+            return isReadonly;
+        } else if (
+            isExistInReactiveMap() ||
+            isExistInReadonlyMap() ||
+            isExistInShallowReadonlyMap()
+        ) {
+            return target;
+        }
+
+        const res = Reflect.get(target, key, receiver);
+
+        if (shallow) {
+            return res;
+        }
+
+        if (isObject(res)) {
+            // 把内部所有的是 object 的值都用 reactive 包裹，变成响应式对象
+            // 如果说这个 res 值是一个对象的话，那么我们需要把获取到的 res 也转换成 reactive
+            // res 等于 target[key]
+            return isReadonly ? readonly(res) : reactive(res);
+        }
+
+        return res;
+    };
+}
+
+function createSetter() {
+    return function set(target, key, value, receiver) {
+        const result = Reflect.set(target, key, value, receiver);
+
+        // 在触发 set 的时候进行触发依赖
+        trigger(target, "set", key);
+
+        return result;
+    };
+}
+
+const readonlyHandlers = {
+    get: readonlyGet,
+    set(target, key) {
+        // readonly 的响应式对象不可以修改值
+        console.warn(
+            `Set operation on key "${String(key)}" failed: target is readonly.`,
+            target
+        );
+        return true;
+    },
+};
+const mutableHandlers = {
+    get,
+    set,
+};
+const shallowReadonlyHandlers = {
+    get: shallowReadonlyGet,
+    set(target, key) {
+        // readonly 的响应式对象不可以修改值
+        console.warn(
+            `Set operation on key "${String(key)}" failed: target is readonly.`,
+            target
+        );
+        return true;
+    },
+};
+
+const reactiveMap = new WeakMap();
+const readonlyMap = new WeakMap();
+const shallowReadonlyMap = new WeakMap();
+
+const ReactiveFlags = {
+  IS_REACTIVE: '__v_isReactive',
+  IS_READONLY: '__v_isReadonly',
+  RAW: '__v_raw',
+};
+
+function reactive (target) {
+  return createReactiveObject(target, reactiveMap, mutableHandlers)
+}
+
+function readonly (target) {
+  return createReactiveObject(target, readonlyMap, readonlyHandlers)
+}
+
+function shallowReadonly (target) {
+  return createReactiveObject(
+    target,
+    shallowReadonlyMap,
+    shallowReadonlyHandlers
+  )
+}
+
+function createReactiveObject (target, proxyMap, baseHandlers) {
+  // 核心就是 proxy
+  // 目的是可以侦听到用户 get 或者 set 的动作
+
+  // 如果命中的话就直接返回就好了
+  // 使用缓存做的优化点
+  const existingProxy = proxyMap.get(target);
+  if (existingProxy) {
+    return existingProxy
+  }
+
+  const proxy = new Proxy(target, baseHandlers);
+
+  // 把创建好的 proxy 给存起来，
+  proxyMap.set(target, proxy);
+  return proxy
 }
 
 function initComponentProps (instance, props) {

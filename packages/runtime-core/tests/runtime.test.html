@@ -25,7 +25,8 @@
 <div id="container"></div>
 <script src="../dist/runtime-core.global.js"></script>
 <script>
-  const { createApp, h } = EchoRuntime
+
+  const { createApp, h, renderSlots, createTextVNode, getCurrentInstance } = EchoRuntime
   // createApp({
   //   render () {
   //     return h('div',
@@ -59,27 +60,44 @@
             return h('div',
               {},
               [
+                renderSlots(this.$slots, 'header', {
+                  name: '作用域插槽'
+                }),
+                createTextVNode('this is TextVnode'),
                 h('div',
                   {
                     id: 'outer',
                     onClick: () => {
-                      console.log('click')
+                      this.showEmit()
                     },
                     class: 'color-blue'
                   },
                   this.elementType
-                )
+                ),
+                renderSlots(this.$slots, 'footer')
               ]
             )
           },
-          setup (props) {
-            console.log(props)
-            return {}
+          setup (props, { emit }) {
+            console.log(getCurrentInstance())
+            return {
+              showEmit: () => {
+                emit('onAdd')
+              }
+            }
           }
         },
         {
-          elementType: 'Button!'
-        }, '')
+          elementType: 'Button',
+          onAdd: () => {
+            console.log('this is emit onAdd')
+          }
+        },
+        {
+          header: (props) => h('div', {}, 'header' + props.name),
+          footer: h('div', {}, 'footer')
+        }
+      )
     },
     setup () {
       return {

@@ -1,5 +1,8 @@
 import { isArray, isObject, isString, ShapeFlags } from '@echo/shared/src'
 
+const Fragment = Symbol('Fragment')
+const Text = Symbol('Text')
+
 function createVNode (type, props, children) {
   const vnode = {
     type,
@@ -25,4 +28,13 @@ function getShapeFlag (type) {
   }
 }
 
-export default createVNode
+function createTextVNode (string) {
+  return createVNode(Text, {}, string)
+}
+
+export {
+  Fragment,
+  Text,
+  createTextVNode,
+  createVNode
+}

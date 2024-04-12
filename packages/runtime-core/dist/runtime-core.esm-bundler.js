@@ -17,6 +17,10 @@ function isArray (param) {
   return Object.prototype.toString.call(param) === '[object Array]'
 }
 
+function isFunction (param) {
+  return Object.prototype.toString.call(param) === '[object Function]'
+}
+
 function hasOwnProperty (obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key)
 }
@@ -24,6 +28,9 @@ function hasOwnProperty (obj, key) {
 function isOn (key) {
   return /^on[A-Za-z]+/.test(key)
 }
+
+const Fragment = Symbol('Fragment');
+const Text = Symbol('Text');
 
 function createVNode (type, props, children) {
   const vnode = {
@@ -48,6 +55,10 @@ function getShapeFlag (type) {
   } else if (isString(type)) {
     return ShapeFlags.ELEMENT
   }
+}
+
+function createTextVNode (string) {
+  return createVNode(Text, {}, string)
 }
 
 function mountElement (vnode, container) {
@@ -176,7 +187,8 @@ function initComponentProps (instance, props) {
 }
 
 const publicPropertiesMap = {
-  $el: (i) => i.vnode.el
+  $el: (i) => i.vnode.el,
+  $slots: (i) => i.slots
 };
 const instanceProxyHandler = {
   get ({ _: instance }, key) {
@@ -193,8 +205,45 @@ const instanceProxyHandler = {
   }
 };
 
+function initComponentSlots (instance, children) {
+  if (!children) {
+    return
+  }
+  const slots = {};
+  for (let key in children) {
+    const value = children[key];
+    if (isArray(value)) {
+      slots[key] = value;
+    } else if (isFunction(value)) {
+      slots[key] = value;
+    } else {
+      slots[key] = [value];
+    }
+  }
+  instance.slots = slots;
+}
+
+function renderSlots (slots, name, prop) {
+  const slot = slots[name];
+  if (isFunction(slot)) {
+    return h(Fragment, {}, [slot(prop)])
+  } else {
+    return h(Fragment, {}, slot)
+  }
+}
+
+let currentInstance = null;
+
+function getCurrentInstance () {
+  return currentInstance
+}
+
+function setCurrentInstance (instance) {
+  currentInstance = instance;
+}
+
 function setupComponent (componentInstance) {
-  //init slot
+  initComponentSlots(componentInstance, componentInstance.vnode.children);
   initComponentProps(componentInstance, componentInstance.vnode.props);
   setupStatefulComponent(componentInstance);
 }
@@ -203,7 +252,9 @@ function setupStatefulComponent (componentInstance) {
   componentInstance.proxy = new Proxy({ _: componentInstance }, instanceProxyHandler);
   const component = componentInstance.type;
   if (component.setup) {
-    const setupResult = component.setup(shallowReadonly(componentInstance.props));
+    setCurrentInstance(componentInstance);
+    const setupResult = component.setup(shallowReadonly(componentInstance.props), { emit: componentInstance.emit });
+    setCurrentInstance(null);
     handleSetupResult(componentInstance, setupResult);
   }
 }
@@ -224,10 +275,18 @@ function finishComponentSetup (instance) {
   }
 }
 
+function emit (instance, event) {
+  const props = instance.props || {};
+  const emitAction = props[event];
+  emitAction && emitAction();
+}
+
 function createComponentInstance (vnode) {
-  return {
-    vnode, type: vnode.type, setupState: {},
-  }
+  const instance = {
+    vnode, type: vnode.type, setupState: {}, props: {}, emit: () => {}, slots: {}
+  };
+  instance.emit = emit.bind(null, instance);
+  return instance
 }
 
 function mountComponent (vnode, container) {
@@ -245,12 +304,37 @@ function setupRenderEffect (componentInstance, vnode, container) {
 }
 
 function patch (vnode, container) {
-  const { shapeFlag } = vnode;
-  if (shapeFlag & ShapeFlags.ELEMENT) {
-    processElement(vnode, container);
-  } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    processComponent(vnode, container);
+  const { type, shapeFlag } = vnode;
+
+  switch (type) {
+    case Fragment:
+      processFragment(vnode, container);
+      break
+    case Text:
+      processTextNode(vnode, container);
+      break
+    default:
+      if (shapeFlag & ShapeFlags.ELEMENT) {
+        processElement(vnode, container);
+      } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        processComponent(vnode, container);
+      }
+      break
   }
+
+}
+
+function processFragment (vnode, container) {
+  vnode.children.forEach(child => {
+    patch(child, container);
+  });
+}
+
+function processTextNode (vnode, container) {
+  const { children } = vnode;
+  const textNode = (vnode.el = document.createTextNode(children));
+  container.append(textNode);
+
 }
 
 function processElement (vnode, container) {
@@ -276,9 +360,9 @@ function createApp (rootComponent) {
 
 // h函数用来创建vnode
 
-function h (type, props, children) {
+function h$1 (type, props, children) {
   return createVNode(type, props, children)
 }
 
-export { createApp, h };
+export { createApp, createTextVNode, getCurrentInstance, h$1 as h, renderSlots };
 //# sourceMappingURL=runtime-core.esm-bundler.js.map

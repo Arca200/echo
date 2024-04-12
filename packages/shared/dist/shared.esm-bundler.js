@@ -53,5 +53,7 @@ function isOn (key) {
   return /^on[A-Za-z]+/.test(key)
 }
 
-export { ShapeFlags, hasChanged, hasOwnProperty, isArray, isBoolean, isDate, isFunction, isNull, isObject, isOn, isRegExp, isString, isUndefined };
+const extend = Object.assign;
+
+export { ShapeFlags, extend, hasChanged, hasOwnProperty, isArray, isBoolean, isDate, isFunction, isNull, isObject, isOn, isRegExp, isString, isUndefined };
 //# sourceMappingURL=shared.esm-bundler.js.map

@@ -1,4 +1,4 @@
-var EchoRuntime = (function (exports) {
+var EchoRuntime = (function (exports, src) {
   'use strict';
 
   const ShapeFlags = {
@@ -92,99 +92,6 @@ var EchoRuntime = (function (exports) {
     }
   }
 
-  const targetMap = new WeakMap();
-
-  function Trigger (target, key) {
-    let depMap = targetMap.get(target);
-    if (!depMap) {
-      return
-    }
-    const effectSet = new Set();
-    depMap.get(key).forEach(effect => {
-      effectSet.add(effect);
-    });
-    effectSet.forEach(effect => {
-      if (effect.scheduler) {
-        effect.scheduler();
-      } else {
-        effect();
-      }
-    });
-  }
-
-  function getCreator (isShallow = false, isReadOnly = false) {
-    return (target, key) => {
-      if (key === 'is_reactive') {
-        return !isReadOnly
-      }
-      if (key === 'is_readonly') {
-        return isReadOnly
-      }
-      let res = Reflect.get(target, key);
-      if (!isShallow && isObject(res)) {
-        //TODO 将res转变成响应式对象
-        return isReadOnly ? readonly(res) : reactive(res)
-      } else {
-        return res
-      }
-    }
-  }
-
-  function setCreator (isReadOnly = false) {
-    return (target, key, val) => {
-      if (isReadOnly) {
-        throw new Error('这是一个只读的对象')
-      }
-      Reflect.set(target, key, val);
-      //TODO 触发依赖
-      Trigger(target, key);
-    }
-  }
-
-  const reactiveHandler = {
-    get: getCreator(),
-    set: setCreator()
-  };
-  const readOnlyHandler = {
-    get: getCreator(false, true),
-    set: setCreator(true)
-  };
-  const shallowReadOnlyHandler = {
-    get: getCreator(true, true),
-    set: setCreator(true)
-  };
-
-  // TODO 为什么要设计两个Map来存储呢?
-  const reactiveMap = new WeakMap();
-  const readOnlyMap = new WeakMap();
-
-  function createReactiveObject (target, isReadOnly, handler) {
-    if (isObject(target) !== true) {
-      throw new Error('只能将对象转化为响应式对象')
-    }
-    const proxyMap = isReadOnly ? readOnlyMap : reactiveMap;
-    let proxy = proxyMap.get(target);
-    if (proxy) {
-      return proxy
-    } else {
-      proxy = new Proxy(target, handler);
-      proxyMap.set(target, proxy);
-      return proxy
-    }
-  }
-
-  function reactive (target) {
-    return createReactiveObject(target, false, reactiveHandler)
-  }
-
-  function readonly (target) {
-    return createReactiveObject(target, true, readOnlyHandler)
-  }
-
-  function shallowReadonly (target) {
-    return createReactiveObject(target, true, shallowReadOnlyHandler)
-  }
-
   function initComponentProps (instance, props) {
     instance.props = props || {};
   }
@@ -256,7 +163,7 @@ var EchoRuntime = (function (exports) {
     const component = componentInstance.type;
     if (component.setup) {
       setCurrentInstance(componentInstance);
-      const setupResult = component.setup(shallowReadonly(componentInstance.props), { emit: componentInstance.emit });
+      const setupResult = component.setup(src.shallowReadonly(componentInstance.props), { emit: componentInstance.emit });
       setCurrentInstance(null);
       handleSetupResult(componentInstance, setupResult);
     }
@@ -375,5 +282,5 @@ var EchoRuntime = (function (exports) {
 
   return exports;
 
-})({});
+})({}, src);
 //# sourceMappingURL=runtime-core.global.js.map

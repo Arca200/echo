@@ -56,7 +56,10 @@ var EchoShared = (function (exports) {
     return /^on[A-Za-z]+/.test(key)
   }
 
+  const extend = Object.assign;
+
   exports.ShapeFlags = ShapeFlags;
+  exports.extend = extend;
   exports.hasChanged = hasChanged;
   exports.hasOwnProperty = hasOwnProperty;
   exports.isArray = isArray;

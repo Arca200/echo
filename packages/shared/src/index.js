@@ -46,6 +46,7 @@ function isOn (key) {
   return /^on[A-Za-z]+/.test(key)
 }
 
+const extend = Object.assign
 export {
   isObject,
   isArray,
@@ -58,7 +59,8 @@ export {
   isRegExp,
   hasChanged,
   hasOwnProperty,
-  isOn
+  isOn,
+  extend
 }
 export {
   ShapeFlags

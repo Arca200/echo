@@ -48,14 +48,24 @@ var EchoShared = (function (exports) {
     return param1 !== param2
   }
 
+  function hasOwnProperty (obj, key) {
+    return Object.prototype.hasOwnProperty.call(obj, key)
+  }
+
+  function isOn (key) {
+    return /^on[A-Za-z]+/.test(key)
+  }
+
   exports.ShapeFlags = ShapeFlags;
   exports.hasChanged = hasChanged;
+  exports.hasOwnProperty = hasOwnProperty;
   exports.isArray = isArray;
   exports.isBoolean = isBoolean;
   exports.isDate = isDate;
   exports.isFunction = isFunction;
   exports.isNull = isNull;
   exports.isObject = isObject;
+  exports.isOn = isOn;
   exports.isRegExp = isRegExp;
   exports.isString = isString;
   exports.isUndefined = isUndefined;

@@ -10,7 +10,15 @@
     }
 
     .color-blue {
-        color: #1b007a
+        color: #1b007a;
+        width: 55px;
+        height: 30px;
+        border-radius: 8px;
+        text-align: center;
+        line-height: 30px;
+        border: 1px solid black;
+        cursor: pointer;
+        user-select: none;
     }
 </style>
 <body>
@@ -18,48 +26,24 @@
 <script src="../dist/runtime-core.global.js"></script>
 <script>
   const { createApp, h } = EchoRuntime
-  createApp({
-    render () {
-      return h('div',
-        {},
-        [h(
-          {
-            render () {
-              return h('h1', { class: 'color-blue' }, this.content + ' : ' + this.title)
-            },
-            setup (props) {
-              return {
-                content: 'this is innerSetup'
-              }
-            }
-          },
-          { title: 'today news' },
-          ''
-        )])
-    },
-    setup () {
-      return {
-        msg: 'world'
-      }
-    }
-  }).mount('#container')
   // createApp({
   //   render () {
   //     return h('div',
-  //       {
-  //         id: 'outer',
-  //         onClick: () => {
-  //           console.log('click')
+  //       {},
+  //       [h(
+  //         {
+  //           render () {
+  //             return h('h1', { class: 'color-blue' }, this.content + ' : ' + this.title)
+  //           },
+  //           setup (props) {
+  //             return {
+  //               content: 'this is innerSetup'
+  //             }
+  //           }
   //         },
-  //         onmousedown: () => {
-  //           console.log('??')
-  //         }
-  //       },
-  //       [h({
-  //         render () {
-  //           return h('h1', { class: 'color-blue' }, this.title)
-  //         }
-  //       }, { title: 'today news' }, ''), h('span', { class: 'color-red' }, 'hello ' + this.msg)])
+  //         { title: 'today news' },
+  //         ''
+  //       )])
   //   },
   //   setup () {
   //     return {
@@ -67,6 +51,42 @@
   //     }
   //   }
   // }).mount('#container')
+  createApp({
+    render () {
+      return h(
+        {
+          render () {
+            return h('div',
+              {},
+              [
+                h('div',
+                  {
+                    id: 'outer',
+                    onClick: () => {
+                      console.log('click')
+                    },
+                    class: 'color-blue'
+                  },
+                  this.elementType
+                )
+              ]
+            )
+          },
+          setup (props) {
+            console.log(props)
+            return {}
+          }
+        },
+        {
+          elementType: 'Button!'
+        }, '')
+    },
+    setup () {
+      return {
+        msg: 'world'
+      }
+    }
+  }).mount('#container')
 </script>
 </body>
 </html>

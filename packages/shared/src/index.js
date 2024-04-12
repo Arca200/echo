@@ -38,6 +38,14 @@ function hasChanged (param1, param2) {
   return param1 !== param2
 }
 
+function hasOwnProperty (obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key)
+}
+
+function isOn (key) {
+  return /^on[A-Za-z]+/.test(key)
+}
+
 export {
   isObject,
   isArray,
@@ -48,7 +56,9 @@ export {
   isNull,
   isUndefined,
   isRegExp,
-  hasChanged
+  hasChanged,
+  hasOwnProperty,
+  isOn
 }
 export {
   ShapeFlags

@@ -45,5 +45,13 @@ function hasChanged (param1, param2) {
   return param1 !== param2
 }
 
-export { ShapeFlags, hasChanged, isArray, isBoolean, isDate, isFunction, isNull, isObject, isRegExp, isString, isUndefined };
+function hasOwnProperty (obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key)
+}
+
+function isOn (key) {
+  return /^on[A-Za-z]+/.test(key)
+}
+
+export { ShapeFlags, hasChanged, hasOwnProperty, isArray, isBoolean, isDate, isFunction, isNull, isObject, isOn, isRegExp, isString, isUndefined };
 //# sourceMappingURL=shared.esm-bundler.js.map

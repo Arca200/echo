@@ -1,11 +1,10 @@
-import { isString, ShapeFlags } from '@echo/shared/src'
+import { isOn, isString, ShapeFlags } from '@echo/shared/src'
 import patch from './patch'
 
 function mountElement (vnode, container) {
   vnode.el = document.createElement(vnode.type)
 
   const { shapeFlag, children, props, el } = vnode
-  const isOn = (key) => /^on[A-Za-z]+/.test(key)
   for (const elKey in props) {
     const val = props[elKey]
     if (isOn(elKey)) {

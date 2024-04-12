@@ -1,7 +1,7 @@
-import { isObject } from '../../shared/src'
-import { initComponentProps } from './props'
-import { instanceProxyHandler } from './instance'
 import { shallowReadonly } from '@echo/reactivity/src'
+import { isObject } from '@echo/shared/src'
+import { initComponentProps } from './props'
+import instanceProxyHandler from './instanceProxyHandler'
 
 function setupComponent (componentInstance) {
   //init slot
@@ -18,6 +18,7 @@ function setupStatefulComponent (componentInstance) {
   }
 }
 
+//存放setup的执行结果
 function handleSetupResult (instance, setupResult) {
   if (isObject(setupResult)) {
     instance.setupState = setupResult
@@ -25,6 +26,7 @@ function handleSetupResult (instance, setupResult) {
   finishComponentSetup(instance)
 }
 
+//存储render函数
 function finishComponentSetup (instance) {
   const component = instance.type
   if (component.render) {
@@ -32,12 +34,6 @@ function finishComponentSetup (instance) {
   }
 }
 
-function createComponentInstance (vnode) {
-  return {
-    vnode, type: vnode.type, setupState: {},
-  }
-}
-
 export {
-  createComponentInstance, setupComponent
+  setupComponent,
 }

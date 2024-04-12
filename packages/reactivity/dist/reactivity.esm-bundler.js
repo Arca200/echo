@@ -1,16 +1,16 @@
-let reactiveEffectStack = [];
-let currentReactiveEffect = undefined;
+let reactivrEffectStack = [];
+window.currentReactiveEffect = undefined;
 
 function createReactiveEffect (fn, scheduler) {
   const reactiveEffect = function () {
-    if (!reactiveEffectStack.includes(reactiveEffect)) {
+    if (!reactivrEffectStack.includes(reactiveEffect)) {
       try {
-        reactiveEffectStack.push(reactiveEffect);
+        reactivrEffectStack.push(reactiveEffect);
         currentReactiveEffect = reactiveEffect;
         fn();
       } finally {
-        reactiveEffectStack.pop();
-        currentReactiveEffect = reactiveEffectStack[reactiveEffectStack.length - 1];
+        reactivrEffectStack.pop();
+        currentReactiveEffect = reactivrEffectStack[reactivrEffectStack.length - 1];
       }
     }
   };
@@ -68,12 +68,6 @@ function isObject (param) {
 
 function getCreator (isShallow = false, isReadOnly = false) {
   return (target, key) => {
-    if (key === 'is_reactive') {
-      return !isReadOnly
-    }
-    if (key === 'is_readonly') {
-      return isReadOnly
-    }
     let res = Reflect.get(target, key);
     if (!isReadOnly) {
       //TODO 收集
@@ -163,25 +157,5 @@ function isProxy (target) {
   return isReactive(target) || isReadOnly(target)
 }
 
-class RefImpl {
-  constructor (value) {
-    this._value = value;
-  }
-
-  get value () {
-    Track(this, 'value');
-    return this._value
-  }
-
-  set value (newValue) {
-    this._value = newValue;
-    Trigger(this, 'value');
-  }
-}
-
-function ref (target) {
-  return new RefImpl(target)
-}
-
-export { Track, Trigger, effect, isProxy, isReactive, isReadOnly, reactive, readonly, ref, shallowReactive, shallowReadonly, targetMap };
+export { Track, Trigger, effect, isProxy, isReactive, isReadOnly, reactive, readonly, shallowReactive, shallowReadonly };
 //# sourceMappingURL=reactivity.esm-bundler.js.map

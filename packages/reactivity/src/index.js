@@ -1,8 +1,7 @@
 export {
   Track,
   Trigger,
-  effect,
-  targetMap
+  effect
 } from './effect'
 export {
   reactive,
@@ -13,6 +12,3 @@ export {
   isReadOnly,
   isProxy
 } from './reactive'
-export {
-  ref
-} from './ref'

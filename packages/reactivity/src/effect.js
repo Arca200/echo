@@ -1,16 +1,16 @@
-let reactiveEffectStack = []
-let currentReactiveEffect = undefined
+let reactivrEffectStack = []
+window.currentReactiveEffect = undefined
 
 function createReactiveEffect (fn, scheduler) {
   const reactiveEffect = function () {
-    if (!reactiveEffectStack.includes(reactiveEffect)) {
+    if (!reactivrEffectStack.includes(reactiveEffect)) {
       try {
-        reactiveEffectStack.push(reactiveEffect)
+        reactivrEffectStack.push(reactiveEffect)
         currentReactiveEffect = reactiveEffect
         fn()
       } finally {
-        reactiveEffectStack.pop()
-        currentReactiveEffect = reactiveEffectStack[reactiveEffectStack.length - 1]
+        reactivrEffectStack.pop()
+        currentReactiveEffect = reactivrEffectStack[reactivrEffectStack.length - 1]
       }
     }
   }
@@ -63,8 +63,5 @@ function Trigger (target, key) {
 }
 
 export {
-  effect,
-  Trigger,
-  Track,
-  targetMap
+  effect, Trigger, Track
 }

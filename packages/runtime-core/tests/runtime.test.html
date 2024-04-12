@@ -24,7 +24,7 @@
 <script src="../../reactivity/dist/reactivity.global.js"></script>
 <script>
 
-  const { createApp, h, provide, inject, createTextVNode, getCurrentInstance } = EchoRuntime
+  const { createApp, h } = EchoRuntime
   const { reactive } = EchoReactivity
   createApp({
     render () {
@@ -35,22 +35,21 @@
               'div',
               {
                 class: 'color-blue',
-                onClick: this.onClick
               },
-              this.pet.name + this.pet.age
+              this.pet.age + this.pet.name
             )
           },
           setup () {
+            setInterval(() => {
+              pet.name += '-'
+              console.log(pet.name)
+            }, 1000)
             const pet = reactive({
               name: '修发',
               age: 1
             })
-            let onClick = () => {
-              pet.age++
-            }
             return {
               pet,
-              onClick
             }
           }
         }

@@ -8,7 +8,7 @@
 <div id="gf">陈奕霖</div>
 <script src="../dist/reactivity.global.js"></script>
 <script>
-  const { reactive, effect,readonly } = EchoReactivity
+  const { reactive, effect, isReactive, isReadOnly, readonly } = EchoReactivity
   let gf = reactive({
     name: '陈奕霖',
     age: 26
@@ -20,6 +20,12 @@
   effect(() => {
     let str = gf.name + '今年' + gf.age + '岁了'
     document.querySelector('#gf').innerHTML = str
+  }, {
+    lazy: false,
+    scheduler: () => {
+      let str = gf.name + '今年' + gf.age + '岁了'
+      document.querySelector('#gf').innerHTML = str
+    }
   })
   setTimeout(() => {
     gf.age--

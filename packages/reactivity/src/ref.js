@@ -1,6 +1,8 @@
 import { Track, Trigger } from './effect'
 
 class RefImpl {
+  private _value
+
   constructor (value) {
     this._value = value
   }
@@ -16,10 +18,6 @@ class RefImpl {
   }
 }
 
-function ref (target) {
+export function ref (target) {
   return new RefImpl(target)
-}
-
-export {
-  ref
 }

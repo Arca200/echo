@@ -89,19 +89,19 @@ function mountElement (vnode, container) {
   }
 }
 
-let reactiveEffectStack = [];
-let currentReactiveEffect = undefined;
+let reactivrEffectStack = [];
+window.currentReactiveEffect = undefined;
 
 function createReactiveEffect (fn, scheduler) {
   const reactiveEffect = function () {
-    if (!reactiveEffectStack.includes(reactiveEffect)) {
+    if (!reactivrEffectStack.includes(reactiveEffect)) {
       try {
-        reactiveEffectStack.push(reactiveEffect);
+        reactivrEffectStack.push(reactiveEffect);
         currentReactiveEffect = reactiveEffect;
         fn();
       } finally {
-        reactiveEffectStack.pop();
-        currentReactiveEffect = reactiveEffectStack[reactiveEffectStack.length - 1];
+        reactivrEffectStack.pop();
+        currentReactiveEffect = reactivrEffectStack[reactivrEffectStack.length - 1];
       }
     }
   };
@@ -155,12 +155,6 @@ function Trigger (target, key) {
 
 function getCreator (isShallow = false, isReadOnly = false) {
   return (target, key) => {
-    if (key === 'is_reactive') {
-      return !isReadOnly
-    }
-    if (key === 'is_readonly') {
-      return isReadOnly
-    }
     let res = Reflect.get(target, key);
     if (!isReadOnly) {
       //TODO 收集
@@ -347,7 +341,7 @@ function mountComponent (vnode, container, parent) {
 function setupRenderEffect (componentInstance, vnode, container) {
   effect(() => {
     const { proxy } = componentInstance;
-    const subTree = componentInstance.render.call(proxy);
+    const subTree = componentInstance.render.call(proxy, proxy);
     patch(subTree, container, componentInstance);
 
     vnode.el = subTree.el;

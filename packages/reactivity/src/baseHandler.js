@@ -4,12 +4,6 @@ import { isReactive, reactive, readonly } from './reactive'
 
 function getCreator (isShallow = false, isReadOnly = false) {
   return (target, key) => {
-    if (key === 'is_reactive') {
-      return !isReadOnly
-    }
-    if (key === 'is_readonly') {
-      return isReadOnly
-    }
     let res = Reflect.get(target, key)
     if (!isReadOnly) {
       //TODO 收集

@@ -7,13 +7,24 @@
 <style>
 
     .color-blue {
-        color: #1b007a;
-        width: 55px;
+        background-color: #3400ff;
+        color: white;
+        width: 110px;
+        border-radius: 8px;
+        text-align: center;
+        line-height: 30px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .color-purple {
+        background-color: #3400ff;
+        color: white;
+        width: 110px;
         height: 30px;
         border-radius: 8px;
         text-align: center;
         line-height: 30px;
-        border: 1px solid black;
         cursor: pointer;
         user-select: none;
     }
@@ -34,22 +45,30 @@
             return h(
               'div',
               {
-                class: 'color-blue',
+                class: this.pet.class,
+                onClick: this.onClick,
+                name: this.pet.name
               },
-              this.pet.age + this.pet.name
+              this.pet.children
+              // this.pet.name + '今年' + this.pet.age + '岁了'
             )
           },
           setup () {
-            setInterval(() => {
-              pet.name += '-'
-              console.log(pet.name)
-            }, 1000)
             const pet = reactive({
               name: '修发',
-              age: 1
+              age: 1,
+              class: 'color-blue',
+              children: [h('div', {}, '1'), h('div', {}, '2'), h('div', {}, '3'), h('div', {}, '4')]
+              // children: 'hello'
             })
+            const onClick = () => {
+              pet.children = [h('div', {}, '5'), h('div', {}, '6'), h('div', {}, '7'), h('div', {}, '8')]
+              // pet.children = 'world'
+              // pet.age = Math.ceil(Math.random() * 10)
+            }
             return {
               pet,
+              onClick
             }
           }
         }

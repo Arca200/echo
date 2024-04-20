@@ -1,39 +1,38 @@
 import { isString, ShapeFlags } from '@echo/shared/src'
-import { mountElement } from './mountElement'
+import { mountElement, patchElement } from './mountElement'
 import { mountComponent } from './mountComponent'
 import { Fragment } from './vnode'
 import { Text } from './vnode'
 
-function patch (vnode, container, parent) {
-  const { type, shapeFlag } = vnode
-
+function patch (preSubTree, currentSubTree, container, parent) {
+  const { type, shapeFlag } = currentSubTree
   switch (type) {
     case Fragment:
-      processFragment(vnode, container)
+      processFragment(preSubTree, currentSubTree, container)
       break
     case Text:
-      processTextNode(vnode, container)
+      processTextNode(preSubTree, currentSubTree, container)
       break
     default:
       if (shapeFlag & ShapeFlags.ELEMENT) {
-        processElement(vnode, container)
+        processElement(preSubTree, currentSubTree, container)
       } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-        processComponent(vnode, container, parent)
+        processComponent(preSubTree, currentSubTree, container, parent)
       }
       break
   }
 
 }
 
-function processFragment (vnode, container) {
-  vnode.children.forEach(child => {
+function processFragment (preSubTree, currentSubTree, container) {
+  currentSubTree.children.forEach(child => {
     patch(child, container)
   })
 }
 
-function processTextNode (vnode, container) {
-  const { children } = vnode
-  const textNode = (vnode.el = document.createTextNode(children))
+function processTextNode (preSubTree, currentSubTree, container) {
+  const { children } = currentSubTree
+  const textNode = (currentSubTree.el = document.createTextNode(children))
   if (isString(container)) {
     document.querySelector(container).appendChild(textNode)
   } else {
@@ -41,12 +40,17 @@ function processTextNode (vnode, container) {
   }
 }
 
-function processElement (vnode, container, parent) {
-  mountElement(vnode, container)
+function processElement (preSubTree, currentSubTree, container, parent) {
+  if (!preSubTree) {
+    mountElement(preSubTree, currentSubTree, container)
+  } else {
+    patchElement(preSubTree, currentSubTree, container)
+  }
+
 }
 
-function processComponent (vnode, container, parent) {
-  mountComponent(vnode, container, parent)
+function processComponent (preSubTree, currentSubTree, container, parent) {
+  mountComponent(preSubTree, currentSubTree, container, parent)
 }
 
 export default patch

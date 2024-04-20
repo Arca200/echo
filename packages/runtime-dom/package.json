@@ -1,0 +1,12 @@
+{
+  "name": "@echo/runtime-dom",
+  "version": "1.0.0",
+  "main": "index.js",
+  "buildOptions": {
+    "name": "EchoRuntimeDom",
+    "formats": [
+      "esm-bundler",
+      "global"
+    ]
+  }
+}

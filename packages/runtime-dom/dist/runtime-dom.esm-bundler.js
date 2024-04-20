@@ -29,74 +29,6 @@ function isOn (key) {
   return /^on[A-Za-z]+/.test(key)
 }
 
-const Fragment = Symbol('Fragment');
-const Text = Symbol('Text');
-
-function createVNode (type, props, children) {
-  const vnode = {
-    type,
-    props,
-    children,
-    el: undefined,
-    isVNode: true,
-    shapeFlag: getShapeFlag(type)
-  };
-  if (isString(vnode.children)) {
-    vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.TEXT_CHILD;
-  } else if (isArray(vnode.children)) {
-    vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.ARRAY_CHILD;
-  }
-  return vnode
-}
-
-function getShapeFlag (type) {
-  if (isObject(type)) {
-    return ShapeFlags.STATEFUL_COMPONENT
-  } else if (isString(type)) {
-    return ShapeFlags.ELEMENT
-  }
-}
-
-function createTextVNode (string) {
-  return createVNode(Text, {}, string)
-}
-
-function removeChildren (node) {
-  while (node.firstChild) {
-    node.removeChild(node.firstChild);
-  }
-}
-
-function addChildren (children, el) {
-  children.forEach(child => {
-    patch(null, child, el);
-  });
-}
-
-function addText (text, el) {
-  el.textContent = text;
-}
-
-function addProps (props, el) {
-  for (const key in props) {
-    const value = props[key];
-    if (isOn(key)) {
-      const event = key.slice(2).toLowerCase();
-      el.addEventListener(event, value);
-    } else {
-      el.setAttribute(key, value);
-    }
-  }
-}
-
-function appendVNode (container, VNode) {
-  if (isString(container)) {
-    document.querySelector(container).appendChild(VNode);
-  } else {
-    container.appendChild(VNode);
-  }
-}
-
 function mountElement (preSubTree, vnode, container) {
   vnode.el = document.createElement(vnode.type);
   const { shapeFlag, children, props, el } = vnode;
@@ -317,6 +249,9 @@ const instanceProxyHandler = {
   }
 };
 
+const Fragment = Symbol('Fragment');
+const Text = Symbol('Text');
+
 function initComponentSlots (instance, children) {
   if (!children) {
     return
@@ -335,25 +270,6 @@ function initComponentSlots (instance, children) {
   instance.slots = slots;
 }
 
-function renderSlots (slots, name, prop) {
-  const slot = slots[name];
-  if (isFunction(slot)) {
-    return h(Fragment, {}, [slot(prop)])
-  } else {
-    return h(Fragment, {}, slot)
-  }
-}
-
-let currentInstance = null;
-
-function getCurrentInstance () {
-  return currentInstance
-}
-
-function setCurrentInstance (instance) {
-  currentInstance = instance;
-}
-
 function setupComponent (componentInstance) {
   initComponentSlots(componentInstance, componentInstance.vnode.children);
   initComponentProps(componentInstance, componentInstance.vnode.props);
@@ -364,9 +280,7 @@ function setupStatefulComponent (componentInstance) {
   componentInstance.proxy = new Proxy({ _: componentInstance }, instanceProxyHandler);
   const component = componentInstance.type;
   if (component.setup) {
-    setCurrentInstance(componentInstance);
     const setupResult = component.setup(shallowReadonly(componentInstance.props), { emit: componentInstance.emit });
-    setCurrentInstance(null);
     handleSetupResult(componentInstance, setupResult);
   }
 }
@@ -485,53 +399,41 @@ function processComponent (preSubTree, currentSubTree, container, parent) {
   mountComponent(preSubTree, currentSubTree, container, parent);
 }
 
-function render (vnode, rootContainer) {
-  patch(null, vnode, rootContainer);
+function removeChildren (node) {
+  while (node.firstChild) {
+    node.removeChild(node.firstChild);
+  }
 }
 
-function createApp (rootComponent) {
-  return {
-    mount (rootContainer) {
-      const vnode = createVNode(rootComponent);
-      render(vnode, rootContainer);
+function addChildren (children, el) {
+  children.forEach(child => {
+    patch(null, child, el);
+  });
+}
+
+function addText (text, el) {
+  el.textContent = text;
+}
+
+function addProps (props, el) {
+  for (const key in props) {
+    const value = props[key];
+    if (isOn(key)) {
+      const event = key.slice(2).toLowerCase();
+      el.addEventListener(event, value);
+    } else {
+      el.setAttribute(key, value);
     }
   }
 }
 
-// h函数用来创建vnode
-
-function h$1 (type, props, children) {
-  return createVNode(type, props, children)
-}
-
-function inject (key) {
-  const instance = getCurrentInstance();
-  if (instance) {
-    if (instance.provide && instance.provide[key]) {
-      return instance.provide[key]
-    } else if (instance.parent) {
-      return injectFromParent(instance.parent, key)
-    }
-  }
-  return null
-}
-
-function injectFromParent (parent, key) {
-  if (parent.provide && parent.provide[key]) {
-    return parent.provide[key]
-  } else if (parent.parent) {
-    return injectFromParent(parent.parent, key)
-  }
-  return null
-}
-
-function provide (key, value) {
-  const instance = getCurrentInstance();
-  if (instance) {
-    const { provide } = instance;
-    provide[key] = value;
+function appendVNode (container, VNode) {
+  if (isString(container)) {
+    document.querySelector(container).appendChild(VNode);
+  } else {
+    container.appendChild(VNode);
   }
 }
 
-export { createApp, createTextVNode, getCurrentInstance, h$1 as h, inject, provide, renderSlots };
-//# sourceMappingURL=runtime-core.esm-bundler.js.map
+export { addChildren, addProps, addText, appendVNode, removeChildren };
+//# sourceMappingURL=runtime-dom.esm-bundler.js.map

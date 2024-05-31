@@ -35,49 +35,53 @@
 <script src="../../reactivity/dist/reactivity.global.js"></script>
 <script>
 
-  const { createApp, h } = EchoRuntime
-  const { reactive } = EchoReactivity
-  createApp({
-    render () {
-      return h(
+    const {createApp, h} = EchoRuntime
+    const {reactive} = EchoReactivity
+    createApp(
         {
-          render () {
-            return h(
-              'div',
-              {
-                class: this.pet.class,
-                onClick: this.onClick,
-                name: this.pet.name
-              },
-              this.pet.children
-              // this.pet.name + '今年' + this.pet.age + '岁了'
-            )
-          },
-          setup () {
-            const pet = reactive({
-              name: '修发',
-              age: 1,
-              class: 'color-blue',
-              children: [h('div', {}, '1'), h('div', {}, '2'), h('div', {}, '3'), h('div', {}, '4')]
-              // children: 'hello'
-            })
-            const onClick = () => {
-              pet.children = [h('div', {}, '5'), h('div', {}, '6'), h('div', {}, '7'), h('div', {}, '8')]
-              // pet.children = 'world'
-              // pet.age = Math.ceil(Math.random() * 10)
+            render() {
+                return h(
+                    {
+                        render() {
+                            return h(
+                                'div',
+                                {
+                                    class: this.pet.class,
+                                    onClick: this.onClick,
+                                    name: this.pet.name
+                                },
+                                this.pet.children
+                                // this.pet.name + '今年' + this.pet.age + '岁了'
+                            )
+                        },
+                        setup() {
+                            const pet = reactive({
+                                name: '修发',
+                                age: 1,
+                                class: 'color-blue',
+                                // children: [h('div', { key: 'one' }, '1'), h('div', { key: 'two' }, '2'), h('div', { key: 'three' }, '3')]
+                                children: [h('div', {key: 'five'}, '5'), h('div', {key: 'six'}, '6'), h('div', {key: 'seven'}, '7'), h('div', {key: 'eight'}, '8'), h('div', {key: 'nine'}, '9')]
+                                // children: 'hello'
+                            })
+                            const onClick = () => {
+                                // pet.children = [h('div', { key: 'one' }, '1'), h('div', { key: 'two' }, '2'), h('div', { key: 'seven' }, '7'), h('div', { key: 'eight' }, '8'), h('div', { key: 'three' }, '3')]
+                                pet.children = [h('div', {key: 'five'}, '5'), h('div', {key: 'seven'}, '7'), h('div', {key: 'ten'}, '10'), h('div', {key: 'six'}, '6'), h('div', {key: 'nine'}, '9')]
+                                // pet.children = 'world'
+                                // pet.age = Math.ceil(Math.random() * 10)
+                            }
+                            return {
+                                pet,
+                                onClick
+                            }
+                        }
+                    }
+                )
+            },
+            setup() {
+                return {}
             }
-            return {
-              pet,
-              onClick
-            }
-          }
         }
-      )
-    },
-    setup () {
-      return {}
-    }
-  }).mount('#container')
+    ).mount('#container')
 </script>
 </body>
 </html>

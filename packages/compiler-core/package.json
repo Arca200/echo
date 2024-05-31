@@ -1,5 +1,5 @@
 {
-  "name": "@echo/reactivity",
+  "name": "@echo/compiler",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "buildOptions": {
-    "name": "EchoReactivity",
+    "name": "EchoCompiler",
     "formats": [
       "esm-bundler",
       "global"

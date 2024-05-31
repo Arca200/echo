@@ -1,14 +1,12 @@
 export {
-  Track,
-  Trigger,
-  effect
-} from './effect'
+  reactive, readonly, shallowReactive, shallowReadonly
+} from './reactive.js'
 export {
-  reactive,
-  shallowReactive,
-  readonly,
-  shallowReadonly,
-  isReactive,
-  isReadOnly,
-  isProxy
-} from './reactive'
+  effect, stop
+} from './effect.js'
+
+export {
+  ref,
+  isRef,
+  unRef
+} from './ref.js'

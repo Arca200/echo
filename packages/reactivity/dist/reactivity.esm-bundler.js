@@ -1,80 +1,109 @@
-let reactivrEffectStack = [];
-window.currentReactiveEffect = undefined;
-
-function createReactiveEffect (fn, scheduler) {
-  const reactiveEffect = function () {
-    if (!reactivrEffectStack.includes(reactiveEffect)) {
-      try {
-        reactivrEffectStack.push(reactiveEffect);
-        currentReactiveEffect = reactiveEffect;
-        fn();
-      } finally {
-        reactivrEffectStack.pop();
-        currentReactiveEffect = reactivrEffectStack[reactivrEffectStack.length - 1];
-      }
-    }
-  };
-  reactiveEffect.scheduler = scheduler;
-  return reactiveEffect
-}
-
-function effect (fn, option = { lazy: false, scheduler: undefined }) {
-  const reactiveEffect = createReactiveEffect(fn, option.scheduler);
-  if (option.lazy !== true) {
-    reactiveEffect();
-  }
-}
-
-const targetMap = new WeakMap();
-
-function Track (target, key) {
-  if (!currentReactiveEffect) {
-    return
-  }
-  let depMap = targetMap.get(target);
-  if (!depMap) {
-    targetMap.set(target, (depMap = new Map));
-  }
-  let dep = depMap.get(key);
-  if (!dep) {
-    depMap.set(key, (dep = new Set));
-  }
-  if (!dep.has(currentReactiveEffect)) {
-    dep.add(currentReactiveEffect);
-  }
-}
-
-function Trigger (target, key) {
-  let depMap = targetMap.get(target);
-  if (!depMap) {
-    return
-  }
-  const effectSet = new Set();
-  depMap.get(key).forEach(effect => {
-    effectSet.add(effect);
-  });
-  effectSet.forEach(effect => {
-    if (effect.scheduler) {
-      effect.scheduler();
-    } else {
-      effect();
-    }
-  });
-}
-
 function isObject (param) {
   return Object.prototype.toString.call(param) === '[object Object]'
 }
 
-function getCreator (isShallow = false, isReadOnly = false) {
+function hasChanged (param1, param2) {
+  return param1 !== param2
+}
+
+class ReactiveEffect {
+  constructor (fn, scheduler = null) {
+    this._fn = fn;
+    this.scheduler = scheduler;
+    this.deps = new Set;
+  }
+
+  run () {
+    activeEffect = this;
+    return this._fn()
+  }
+
+  stop () {
+    cleanEffect(this);
+  }
+}
+
+function cleanEffect (effect) {
+  effect.deps.forEach(dep => dep.delete(effect));
+  effect.deps.clear();
+}
+
+window.activeEffect=null;
+let targetMap = new Map;
+
+function effect (fn, options = null) {
+  let scheduler = (options && options.scheduler) ? options.scheduler : null;
+  const _effect = new ReactiveEffect(fn, scheduler);
+  _effect.run();
+  const runner = _effect.run.bind(_effect);
+  runner.effect = _effect;
+  // effect函数在执行完毕之后就将activeEffect设为null，这样在effect函数之外就不会收集依赖了
+  activeEffect = null;
+  return runner
+}
+
+function track (target, key) {
+  // effect函数执行完毕之后就不应该收集依赖了，直接返回
+  if (!activeEffect) {
+    return
+  }
+  let depsMap = targetMap.get(target);
+  if (!depsMap) {
+    targetMap.set(target, (depsMap = new Map));
+  }
+
+  let deps = depsMap.get(key);
+  if (!deps) {
+    depsMap.set(key, (deps = new Set));
+  }
+  // 触发依赖的情况下收集依赖就会跳过收集，但是可能会创建新的proxy对象
+  trackEffect(deps);
+}
+
+function trackEffect (deps) {
+  if (!activeEffect) {
+    return
+  }
+  if (!deps.has(activeEffect)) {
+    deps.add(activeEffect);
+    activeEffect.deps.add(deps);
+  }
+}
+
+function trigger (target, key) {
+  const deps = targetMap.get(target).get(key);
+  triggerEffect(deps);
+  // 防止在effect之外收集依赖
+  activeEffect = null;
+}
+
+function triggerEffect (deps) {
+  for (const effect of deps) {
+    if (effect.scheduler) {
+      effect.scheduler();
+    } else {
+      // 在此期间执行依赖的话，由于依赖已经添加在deps中了，所以会直接跳过
+      effect.run();
+    }
+  }
+}
+
+function stop (runner) {
+  runner.effect.stop();
+}
+
+function createGet (isReadOnly = false, isShallow = false) {
   return (target, key) => {
-    let res = Reflect.get(target, key);
+    if (key === 'isReactive') {
+      return !isReadOnly
+    } else if (key === 'isReadOnly') {
+      return isReadOnly
+    }
+    const res = Reflect.get(target, key);
     if (!isReadOnly) {
-      //TODO 收集
-      Track(target, key);
+      track(target, key);
     }
     if (!isShallow && isObject(res)) {
-      //TODO 将res转变成响应式对象
       return isReadOnly ? readonly(res) : reactive(res)
     } else {
       return res
@@ -82,41 +111,42 @@ function getCreator (isShallow = false, isReadOnly = false) {
   }
 }
 
-function setCreator (isReadOnly = false) {
+function createSet (isReadOnly = false) {
   return (target, key, val) => {
     if (isReadOnly) {
-      throw new Error('这是一个只读的对象')
+      console.error('只读响应式对象不可被赋值');
     }
-    Reflect.set(target, key, val);
+    const res = Reflect.set(target, key, val);
     //TODO 触发依赖
-    Trigger(target, key);
+    trigger(target, key);
+    return res
   }
+
 }
 
 const reactiveHandler = {
-  get: getCreator(),
-  set: setCreator()
+  get: createGet(),
+  set: createSet()
 };
 const shallowHandler = {
-  get: getCreator(true),
-  set: setCreator()
+  get: createGet(false, true),
+  set: createSet()
 };
 const readOnlyHandler = {
-  get: getCreator(false, true),
-  set: setCreator(true)
+  get: createGet(true, false),
+  set: createSet(true)
 };
 const shallowReadOnlyHandler = {
-  get: getCreator(true, true),
-  set: setCreator(true)
+  get: createGet(true, true),
+  set: createSet(true)
 };
 
-// TODO 为什么要设计两个Map来存储呢?
 const reactiveMap = new WeakMap();
 const readOnlyMap = new WeakMap();
 
 function createReactiveObject (target, isReadOnly, handler) {
   if (isObject(target) !== true) {
-    throw new Error('只能将对象转化为响应式对象')
+    console.error('必须传入一个对象');
   }
   const proxyMap = isReadOnly ? readOnlyMap : reactiveMap;
   let proxy = proxyMap.get(target);
@@ -145,17 +175,39 @@ function shallowReadonly (target) {
   return createReactiveObject(target, true, shallowReadOnlyHandler)
 }
 
-function isReactive (target) {
-  return !!target['is_reactive']
+class RefImpl {
+  constructor (value) {
+    this._rawValue = value;
+    this._value = isObject(value) ? reactive(value) : value;
+    this.dep = new Set;
+  }
+
+  get value () {
+    trackEffect(this.dep);
+    return this._value
+  }
+
+  set value (newValue) {
+    if (hasChanged(newValue, this._rawValue)) {
+      this._rawValue = newValue;
+      this._value = isObject(newValue) ? reactive(newValue) : newValue;
+      triggerEffect(this.dep);
+    }
+
+  }
 }
 
-function isReadOnly (target) {
-  return !!target['is_readonly']
+function ref (value) {
+  return new RefImpl(value)
 }
 
-function isProxy (target) {
-  return isReactive(target) || isReadOnly(target)
+function isRef (ref) {
+  return ref instanceof RefImpl
 }
 
-export { Track, Trigger, effect, isProxy, isReactive, isReadOnly, reactive, readonly, shallowReactive, shallowReadonly };
+function unRef (ref) {
+  return isRef(ref) ? ref.value : ref
+}
+
+export { effect, isRef, reactive, readonly, ref, shallowReactive, shallowReadonly, stop, unRef };
 //# sourceMappingURL=reactivity.esm-bundler.js.map

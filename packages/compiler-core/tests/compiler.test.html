@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div id="container"></div>
+<script src="../dist/compiler-core.global.js"></script>
+<script>
+  const { baseParse } = EchoCompiler
+  console.log(baseParse('<p>this is p</p>{{              hello world!}}<div id="?" style="color:red">123{{456}}789</div>'))
+</script>
+</body>
+</html>

@@ -1,67 +1,89 @@
-let reactivrEffectStack = []
-window.currentReactiveEffect = undefined
-
-function createReactiveEffect (fn, scheduler) {
-  const reactiveEffect = function () {
-    if (!reactivrEffectStack.includes(reactiveEffect)) {
-      try {
-        reactivrEffectStack.push(reactiveEffect)
-        currentReactiveEffect = reactiveEffect
-        fn()
-      } finally {
-        reactivrEffectStack.pop()
-        currentReactiveEffect = reactivrEffectStack[reactivrEffectStack.length - 1]
-      }
-    }
+class ReactiveEffect {
+  constructor (fn, scheduler = null) {
+    this._fn = fn
+    this.scheduler = scheduler
+    this.deps = new Set
   }
-  reactiveEffect.scheduler = scheduler
-  return reactiveEffect
-}
 
-function effect (fn, option = { lazy: false, scheduler: undefined }) {
-  const reactiveEffect = createReactiveEffect(fn, option.scheduler)
-  if (option.lazy !== true) {
-    reactiveEffect()
+  run () {
+    activeEffect = this
+    return this._fn()
+  }
+
+  stop () {
+    cleanEffect(this)
   }
 }
 
-const targetMap = new WeakMap()
+function cleanEffect (effect) {
+  effect.deps.forEach(dep => dep.delete(effect))
+  effect.deps.clear()
+}
 
-function Track (target, key) {
-  if (!currentReactiveEffect) {
+window.activeEffect=null
+let targetMap = new Map
+
+function effect (fn, options = null) {
+  let scheduler = (options && options.scheduler) ? options.scheduler : null
+  const _effect = new ReactiveEffect(fn, scheduler)
+  _effect.run()
+  const runner = _effect.run.bind(_effect)
+  runner.effect = _effect
+  // effect函数在执行完毕之后就将activeEffect设为null，这样在effect函数之外就不会收集依赖了
+  activeEffect = null
+  return runner
+}
+
+function track (target, key) {
+  // effect函数执行完毕之后就不应该收集依赖了，直接返回
+  if (!activeEffect) {
     return
   }
-  let depMap = targetMap.get(target)
-  if (!depMap) {
-    targetMap.set(target, (depMap = new Map))
+  let depsMap = targetMap.get(target)
+  if (!depsMap) {
+    targetMap.set(target, (depsMap = new Map))
   }
-  let dep = depMap.get(key)
-  if (!dep) {
-    depMap.set(key, (dep = new Set))
+
+  let deps = depsMap.get(key)
+  if (!deps) {
+    depsMap.set(key, (deps = new Set))
   }
-  if (!dep.has(currentReactiveEffect)) {
-    dep.add(currentReactiveEffect)
+  // 触发依赖的情况下收集依赖就会跳过收集，但是可能会创建新的proxy对象
+  trackEffect(deps)
+}
+
+function trackEffect (deps) {
+  if (!activeEffect) {
+    return
+  }
+  if (!deps.has(activeEffect)) {
+    deps.add(activeEffect)
+    activeEffect.deps.add(deps)
   }
 }
 
-function Trigger (target, key) {
-  let depMap = targetMap.get(target)
-  if (!depMap) {
-    return
-  }
-  const effectSet = new Set()
-  depMap.get(key).forEach(effect => {
-    effectSet.add(effect)
-  })
-  effectSet.forEach(effect => {
+function trigger (target, key) {
+  const deps = targetMap.get(target).get(key)
+  triggerEffect(deps)
+  // 防止在effect之外收集依赖
+  activeEffect = null
+}
+
+function triggerEffect (deps) {
+  for (const effect of deps) {
     if (effect.scheduler) {
       effect.scheduler()
     } else {
-      effect()
+      // 在此期间执行依赖的话，由于依赖已经添加在deps中了，所以会直接跳过
+      effect.run()
     }
-  })
+  }
+}
+
+function stop (runner) {
+  runner.effect.stop()
 }
 
 export {
-  effect, Trigger, Track
+  track, trigger, effect, stop, trackEffect, triggerEffect
 }

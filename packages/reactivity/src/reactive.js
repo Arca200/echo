@@ -1,18 +1,12 @@
-import {
-  reactiveHandler,
-  readOnlyHandler,
-  shallowHandler,
-  shallowReadOnlyHandler
-} from './baseHandler.js'
 import { isObject } from '../../shared/src'
+import { reactiveHandler, readOnlyHandler, shallowHandler, shallowReadOnlyHandler } from './baseHandler.js'
 
-// TODO 为什么要设计两个Map来存储呢?
 const reactiveMap = new WeakMap()
 const readOnlyMap = new WeakMap()
 
 function createReactiveObject (target, isReadOnly, handler) {
   if (isObject(target) !== true) {
-    throw new Error('只能将对象转化为响应式对象')
+    console.error('必须传入一个对象')
   }
   const proxyMap = isReadOnly ? readOnlyMap : reactiveMap
   let proxy = proxyMap.get(target)
@@ -42,11 +36,11 @@ function shallowReadonly (target) {
 }
 
 function isReactive (target) {
-  return !!target['is_reactive']
+  return !!target['isReactive']
 }
 
 function isReadOnly (target) {
-  return !!target['is_readonly']
+  return !!target['isReadOnly']
 }
 
 function isProxy (target) {

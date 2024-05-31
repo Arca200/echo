@@ -65,3 +65,6 @@ export {
 export {
   ShapeFlags
 } from './flags'
+export {
+  getSequence
+} from './utils'

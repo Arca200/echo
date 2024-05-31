@@ -1,16 +1,19 @@
+import { track, trigger } from './effect.js'
 import { isObject } from '../../shared/src/index.js'
-import { Track, Trigger } from './effect'
-import { isReactive, reactive, readonly } from './reactive'
+import { reactive, readonly } from './reactive.js'
 
-function getCreator (isShallow = false, isReadOnly = false) {
+function createGet (isReadOnly = false, isShallow = false) {
   return (target, key) => {
-    let res = Reflect.get(target, key)
+    if (key === 'isReactive') {
+      return !isReadOnly
+    } else if (key === 'isReadOnly') {
+      return isReadOnly
+    }
+    const res = Reflect.get(target, key)
     if (!isReadOnly) {
-      //TODO 收集
-      Track(target, key)
+      track(target, key)
     }
     if (!isShallow && isObject(res)) {
-      //TODO 将res转变成响应式对象
       return isReadOnly ? readonly(res) : reactive(res)
     } else {
       return res
@@ -18,32 +21,34 @@ function getCreator (isShallow = false, isReadOnly = false) {
   }
 }
 
-function setCreator (isReadOnly = false) {
+function createSet (isReadOnly = false) {
   return (target, key, val) => {
     if (isReadOnly) {
-      throw new Error('这是一个只读的对象')
+      console.error('只读响应式对象不可被赋值')
     }
-    Reflect.set(target, key, val)
+    const res = Reflect.set(target, key, val)
     //TODO 触发依赖
-    Trigger(target, key)
+    trigger(target, key)
+    return res
   }
+
 }
 
 const reactiveHandler = {
-  get: getCreator(),
-  set: setCreator()
+  get: createGet(),
+  set: createSet()
 }
 const shallowHandler = {
-  get: getCreator(true),
-  set: setCreator()
+  get: createGet(false, true),
+  set: createSet()
 }
 const readOnlyHandler = {
-  get: getCreator(false, true),
-  set: setCreator(true)
+  get: createGet(true, false),
+  set: createSet(true)
 }
 const shallowReadOnlyHandler = {
-  get: getCreator(true, true),
-  set: setCreator(true)
+  get: createGet(true, true),
+  set: createSet(true)
 }
 export {
   reactiveHandler,

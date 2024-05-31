@@ -1,79 +1,125 @@
 var EchoShared = (function (exports) {
-  'use strict';
+    'use strict';
 
-  const ShapeFlags = {
-    ELEMENT: 1,
-    STATEFUL_COMPONENT: 1 << 1,
-    TEXT_CHILD: 1 << 2,
-    ARRAY_CHILD: 1 << 3,
-  };
+    const ShapeFlags = {
+        ELEMENT: 1,
+        STATEFUL_COMPONENT: 1 << 1,
+        TEXT_CHILD: 1 << 2,
+        ARRAY_CHILD: 1 << 3,
+    };
 
-  function isObject (param) {
-    return Object.prototype.toString.call(param) === '[object Object]'
-  }
+    function getSequence (arr) {
+      let p;
+      if (arr) {
+        p = arr.slice();
+      }
 
-  function isString (param) {
-    return Object.prototype.toString.call(param) === '[object String]'
-  }
+      const result = [0];
+      let i, j, u, v, c;
+      const len = arr.length;
+      for (i = 0; i < len; i++) {
+        const arrI = arr[i];
+        if (arrI !== 0) {
+          j = result[result.length - 1];
+          if (arr[j] < arrI) {
+            p[i] = j;
+            result.push(i);
+            continue
+          }
+          u = 0;
+          v = result.length - 1;
+          while (u < v) {
+            c = (u + v) >> 1;
+            if (arr[result[c]] < arrI) {
+              u = c + 1;
+            } else {
+              v = c;
+            }
+          }
+          if (arrI < arr[result[u]]) {
+            if (u > 0) {
+              p[i] = result[u - 1];
+            }
+            result[u] = i;
+          }
+        }
+      }
+      u = result.length;
+      v = result[u - 1];
+      while (u-- > 0) {
+        result[u] = v;
+        v = p[v];
+      }
+      return result
+    }
 
-  function isBoolean (param) {
-    return Object.prototype.toString.call(param) === '[object Boolean]'
-  }
+    function isObject (param) {
+      return Object.prototype.toString.call(param) === '[object Object]'
+    }
 
-  function isNull (param) {
-    return Object.prototype.toString.call(param) === '[object Null]'
-  }
+    function isString (param) {
+      return Object.prototype.toString.call(param) === '[object String]'
+    }
 
-  function isUndefined (param) {
-    return Object.prototype.toString.call(param) === '[object Undefined]'
-  }
+    function isBoolean (param) {
+      return Object.prototype.toString.call(param) === '[object Boolean]'
+    }
 
-  function isArray (param) {
-    return Object.prototype.toString.call(param) === '[object Array]'
-  }
+    function isNull (param) {
+      return Object.prototype.toString.call(param) === '[object Null]'
+    }
 
-  function isFunction (param) {
-    return Object.prototype.toString.call(param) === '[object Function]'
-  }
+    function isUndefined (param) {
+      return Object.prototype.toString.call(param) === '[object Undefined]'
+    }
 
-  function isDate (param) {
-    return Object.prototype.toString.call(param) === '[object Date]'
-  }
+    function isArray (param) {
+      return Object.prototype.toString.call(param) === '[object Array]'
+    }
 
-  function isRegExp (param) {
-    return Object.prototype.toString.call(param) === '[object RegExp]'
-  }
+    function isFunction (param) {
+      return Object.prototype.toString.call(param) === '[object Function]'
+    }
 
-  function hasChanged (param1, param2) {
-    return param1 !== param2
-  }
+    function isDate (param) {
+      return Object.prototype.toString.call(param) === '[object Date]'
+    }
 
-  function hasOwnProperty (obj, key) {
-    return Object.prototype.hasOwnProperty.call(obj, key)
-  }
+    function isRegExp (param) {
+      return Object.prototype.toString.call(param) === '[object RegExp]'
+    }
 
-  function isOn (key) {
-    return /^on[A-Za-z]+/.test(key)
-  }
+    function hasChanged (param1, param2) {
+      return param1 !== param2
+    }
 
-  const extend = Object.assign;
+    function hasOwnProperty (obj, key) {
+      return Object.prototype.hasOwnProperty.call(obj, key)
+    }
 
-  exports.ShapeFlags = ShapeFlags;
-  exports.extend = extend;
-  exports.hasChanged = hasChanged;
-  exports.hasOwnProperty = hasOwnProperty;
-  exports.isArray = isArray;
-  exports.isBoolean = isBoolean;
-  exports.isDate = isDate;
-  exports.isFunction = isFunction;
-  exports.isNull = isNull;
-  exports.isObject = isObject;
-  exports.isOn = isOn;
-  exports.isRegExp = isRegExp;
-  exports.isString = isString;
-  exports.isUndefined = isUndefined;
+    function isOn (key) {
+      return /^on[A-Za-z]+/.test(key)
+    }
 
-  return exports;
+    const extend = Object.assign;
+
+    exports.ShapeFlags = ShapeFlags;
+    exports.extend = extend;
+    exports.getSequence = getSequence;
+    exports.hasChanged = hasChanged;
+    exports.hasOwnProperty = hasOwnProperty;
+    exports.isArray = isArray;
+    exports.isBoolean = isBoolean;
+    exports.isDate = isDate;
+    exports.isFunction = isFunction;
+    exports.isNull = isNull;
+    exports.isObject = isObject;
+    exports.isOn = isOn;
+    exports.isRegExp = isRegExp;
+    exports.isString = isString;
+    exports.isUndefined = isUndefined;
+
+    return exports;
 
 })({});
 //# sourceMappingURL=shared.global.js.map

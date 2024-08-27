@@ -104,7 +104,31 @@ var EchoCompiler = (function (exports) {
     }
   }
 
+  function generate (ast) {
+    const rootNode = ast.children[0];
+    console.log(rootNode);
+    const context = createCodegenContext();
+    const { push } = context;
+    push('render(){ return h(');
+    push(`${rootNode.tag}`);
+    push(')}');
+    return {
+      code: context.code,
+    }
+  }
+
+  function createCodegenContext () {
+    const context = {
+      code: '',
+      push (source) {
+        context.code += source;
+      }
+    };
+    return context
+  }
+
   exports.baseParse = baseParse;
+  exports.generate = generate;
 
   return exports;
 

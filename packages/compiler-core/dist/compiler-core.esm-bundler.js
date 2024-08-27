@@ -101,5 +101,28 @@ function baseParse (content) {
   }
 }
 
-export { baseParse };
+function generate (ast) {
+  const rootNode = ast.children[0];
+  console.log(rootNode);
+  const context = createCodegenContext();
+  const { push } = context;
+  push('render(){ return h(');
+  push(`${rootNode.tag}`);
+  push(')}');
+  return {
+    code: context.code,
+  }
+}
+
+function createCodegenContext () {
+  const context = {
+    code: '',
+    push (source) {
+      context.code += source;
+    }
+  };
+  return context
+}
+
+export { baseParse, generate };
 //# sourceMappingURL=compiler-core.esm-bundler.js.map

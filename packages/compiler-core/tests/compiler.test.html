@@ -8,8 +8,11 @@
 <div id="container"></div>
 <script src="../dist/compiler-core.global.js"></script>
 <script>
-  const { baseParse } = EchoCompiler
-  console.log(baseParse('<p>this is p</p>{{              hello world!}}<div id="?" style="color:red">123{{456}}789</div>'))
+  const { baseParse, generate } = EchoCompiler
+  const ast = baseParse('<div id="?" style="color:red">123{{456}}789</div>')
+  console.log(generate(ast))
+  const render = new Function(generate(ast).code)
+  console.log(render)
 </script>
 </body>
 </html>
